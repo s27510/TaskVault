@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
 export default function CreateTask() {
@@ -19,73 +18,6 @@ export default function CreateTask() {
   const router = useRouter();
   const params = useParams();
   const groupId = params.id as string;
-  const supabase = createClient();
-
-  useEffect(() => {
-    const loadGroupAndMembers = async () => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) {
-          router.push("/auth/login");
-          return;
-        }
-
-        const { data: groupData } = await supabase.from("groups").select("*").eq("id", groupId).single();
-
-        setGroup(groupData);
-
-        const { data: membersData } = await supabase.from("group_members").select("*").eq("group_id", groupId);
-
-        setMembers(membersData || []);
-      } catch (error) {
-        console.error("Error loading data:", error);
-      }
-    };
-
-    loadGroupAndMembers();
-  }, [groupId]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setError("You must be logged in");
-        return;
-      }
-
-      const { error: taskError } = await supabase.from("tasks").insert([
-        {
-          group_id: groupId,
-          created_by: user.id,
-          title,
-          description,
-          points_reward: parseInt(pointsReward),
-          assigned_to: assignedTo || null,
-          due_date: dueDate || null,
-          status: "open",
-        },
-      ]);
-
-      if (taskError) throw taskError;
-
-      router.push(`/groups/${groupId}`);
-    } catch (err: any) {
-      setError(err.message || "Failed to create task");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -103,7 +35,7 @@ export default function CreateTask() {
 
           {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">{error}</div>}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Task Title *</label>
               <input

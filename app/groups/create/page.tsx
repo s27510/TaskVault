@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
 export default function CreateGroup() {
@@ -12,56 +11,6 @@ export default function CreateGroup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-  const supabase = createClient();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setError("You must be logged in to create a group");
-        return;
-      }
-
-      const { data: groupData, error: groupError } = await supabase
-        .from("groups")
-        .insert([
-          {
-            name,
-            description,
-            created_by: user.id,
-          },
-        ])
-        .select();
-
-      if (groupError) throw groupError;
-
-      if (groupData && groupData[0]) {
-        const { error: memberError } = await supabase.from("group_members").insert([
-          {
-            group_id: groupData[0].id,
-            user_id: user.id,
-            role: "admin",
-          },
-        ]);
-
-        if (memberError) throw memberError;
-
-        router.push(`/groups/${groupData[0].id}`);
-      }
-    } catch (err: any) {
-      setError(err.message || "Failed to create group");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -79,7 +28,7 @@ export default function CreateGroup() {
 
           {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">{error}</div>}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Group Name</label>
               <input
